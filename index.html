@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dias Passados</title>
+  <meta name="description" content="Gere papéis de parede personalizados para a tela de bloqueio do celular visualizando sua vida em quadradinhos (semanas ou dias).">
+  
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect width='18' height='18' x='3' y='3' rx='2'/><path d='M3 9h18'/><path d='M9 21V9'/></svg>">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans antialiased selection:bg-brand-500/30 selection:text-brand-400">
+
+  <!-- Header -->
+  <header class="relative border-b border-zinc-800/80 bg-zinc-950/75 backdrop-blur-xl sticky top-0 z-40 py-3.5 sm:py-4 overflow-hidden">
+    <!-- Top Ambient Radial Glow -->
+    <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-80 sm:w-96 h-24 bg-gradient-to-r from-brand-500/10 via-brand-400/20 to-brand-500/10 blur-2xl pointer-events-none rounded-full"></div>
+    <!-- Bottom Glowing Hairline Accent -->
+    <div class="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-500/35 to-transparent pointer-events-none"></div>
+
+    <div class="relative max-w-7xl mx-auto px-4 flex flex-col items-center justify-center text-center">
+      <h1 class="text-base sm:text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-white via-zinc-100 to-zinc-300 bg-clip-text text-transparent">
+        Dias Passados
+      </h1>
+      <p class="text-xs sm:text-[13px] text-zinc-400 mt-1 flex items-center justify-center flex-wrap gap-1.5 font-normal tracking-wide">
+        <span class="text-zinc-300">Seu tempo em perspectiva</span>
+        <span class="inline-block w-1 h-1 rounded-full bg-brand-400/80 shadow-[0_0_6px_rgba(56,189,248,0.6)]"></span>
+        <span class="text-zinc-400">Papel de parede para tela de bloqueio</span>
+      </p>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 flex flex-col lg:flex-row gap-8 items-start">
+
+    <!-- LEFT COLUMN: Live Mobile Preview & Stats -->
+    <section class="w-full lg:w-7/12 flex flex-col items-center">
+      
+      <!-- Phone Simulator Frame -->
+      <div class="relative w-full max-w-[310px] sm:max-w-[340px] md:max-w-[360px] flex items-center justify-center p-1 sm:p-2">
+        <div id="phoneBezel" class="relative w-full bg-zinc-950 border-[6px] sm:border-[7px] border-zinc-800 rounded-[2.8rem] sm:rounded-[3.2rem] p-2 sm:p-2.5 phone-shadow transition-all duration-300 overflow-hidden">
+          
+          <!-- Screen Container (matches exact aspect ratio and scales responsively) -->
+          <div id="screenContainer" class="relative w-full overflow-hidden rounded-[2.2rem] sm:rounded-[2.6rem] bg-black select-none max-h-[64vh] sm:max-h-[580px] flex flex-col justify-between" style="aspect-ratio: 1170 / 2532;">
+            
+            <!-- The Live Render Canvas (absolute background, fits container) -->
+            <canvas id="previewCanvas" class="absolute inset-0 w-full h-full block pointer-events-none"></canvas>
+
+            <!-- Status Bar (Top of Screen) -->
+            <div id="phoneStatusBar" class="relative w-full flex items-center justify-between px-4 sm:px-5 pt-2 sm:pt-2.5 pb-1 z-30 select-none text-[10px] sm:text-[11px] font-semibold text-white/90">
+              <!-- Left: Time / Status -->
+              <div id="statusTime" class="flex items-center gap-1 font-sans font-medium text-white/90">
+                09:41
+              </div>
+
+              <!-- Center: Cutout container (Dynamic Island on iOS, Punch-hole on Android) -->
+              <div id="phoneCameraCutout" class="transition-all duration-300 flex items-center justify-center">
+                <div class="w-24 h-5 sm:w-26 sm:h-5.5 bg-black rounded-full shadow-inner flex items-center justify-between px-2.5 pointer-events-none ring-1 ring-zinc-800/80">
+                  <div class="w-2.5 h-2.5 rounded-full bg-zinc-950 ring-1 ring-zinc-900"></div>
+                  <div class="w-2 h-2 rounded-full bg-indigo-950/80"></div>
+                </div>
+              </div>
+
+              <!-- Right: Status Icons (Signal, Wifi, Battery) -->
+              <div id="statusIcons" class="flex items-center gap-1.5 text-white/90">
+                <!-- Signal SVG -->
+                <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="3" y="16" width="3" height="6" rx="0.5"/>
+                  <rect x="8" y="12" width="3" height="10" rx="0.5"/>
+                  <rect x="13" y="8" width="3" height="14" rx="0.5"/>
+                  <rect x="18" y="4" width="3" height="18" rx="0.5"/>
+                </svg>
+                <!-- Wi-Fi SVG -->
+                <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 18c.8 0 1.5-.7 1.5-1.5S12.8 15 12 15s-1.5.7-1.5 1.5S11.2 18 12 18zm6.5-6.5C16.8 9.8 14.5 9 12 9s-4.8.8-6.5 2.5l1.4 1.4C8.2 11.6 10 11 12 11s3.8.6 5.1 1.9l1.4-1.4zM22 8c-2.7-2.7-6.2-4-10-4S4.7 5.3 2 8l1.4 1.4C5.8 7 8.8 6 12 6s6.2 1 8.6 3.4L22 8z"/>
+                </svg>
+                <!-- Battery SVG -->
+                <div class="flex items-center">
+                  <div class="w-4 h-2 sm:w-4.5 sm:h-2.5 rounded-sm border border-white/80 p-0.5 flex items-center">
+                    <div class="h-full w-full bg-white rounded-[1px]"></div>
+                  </div>
+                  <div class="w-0.5 h-1 bg-white/80 rounded-r-sm"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Optional Lock Screen UI Overlay (Clock, Date, Widgets) -->
+            <div id="lockScreenOverlay" class="relative flex-1 flex flex-col justify-between p-4 sm:p-5 pointer-events-none z-20 transition-opacity duration-200">
+              <!-- Top Section: Carrier, Lock, Clock & Date -->
+              <div class="pt-1 sm:pt-2 flex flex-col items-center text-center">
+                <div class="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-medium text-white/70 mb-0.5">
+                  <svg class="w-3 h-3 text-white/70" viewBox="0 0 24 24" fill="currentColor">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  <span id="lockScreenDate">Terça-feira, 4 de Nov.</span>
+                </div>
+                <div id="lockScreenTime" class="text-5xl sm:text-6xl font-extralight tracking-tight text-white/95 drop-shadow-md font-sans">
+                  09:41
+                </div>
+              </div>
+
+              <!-- Bottom Section: Shortcuts & Bottom Home Bar -->
+              <div class="flex flex-col items-center gap-3 pb-1">
+                <div class="w-full flex justify-between px-2 sm:px-3">
+                  <div id="bottomShortcutLeft" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/80 border border-white/10 shadow-lg">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 6c0 2-2 4-2 7v5a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-5c0-3-2-5-2-7a4 4 0 0 1 8 0z"/>
+                    </svg>
+                  </div>
+                  <div id="bottomShortcutRight" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/80 border border-white/10 shadow-lg">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                  </div>
+                </div>
+                <!-- Bottom Navigation Bar indicator -->
+                <div id="phoneBottomBar" class="w-28 sm:w-32 h-1 bg-white/70 rounded-full"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Controls Bar (Abaixo do Celular) -->
+      <div class="w-full max-w-[480px] flex items-center justify-between gap-3 mt-4 bg-zinc-900/60 border border-zinc-800/80 rounded-xl px-3.5 py-2">
+        <div class="flex items-center gap-2 min-w-0 flex-shrink-0">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
+          <span class="text-zinc-400 font-medium text-xs whitespace-nowrap hidden min-[380px]:inline">Resolução:</span>
+          <span id="resolutionBadge" class="font-mono text-zinc-300 bg-zinc-800/90 px-2.5 py-1 rounded-lg border border-zinc-700/60 text-xs font-semibold whitespace-nowrap">1170 × 2532 px</span>
+        </div>
+
+        <label class="flex items-center gap-2 cursor-pointer text-zinc-300 hover:text-white select-none text-xs font-medium whitespace-nowrap flex-shrink-0 bg-zinc-800/50 hover:bg-zinc-800/90 px-2.5 py-1 rounded-lg border border-zinc-700/50 transition" title="Simula o relógio e os widgets da tela de bloqueio">
+          <input type="checkbox" id="toggleLockScreenOverlay" checked class="w-3.5 h-3.5 rounded bg-zinc-900 border-zinc-700 text-brand-500 focus:ring-0 focus:ring-offset-0">
+          <span class="whitespace-nowrap">Simular Relógio</span>
+        </label>
+      </div>
+
+      <!-- Live Statistics Cards -->
+      <div class="mt-6 w-full max-w-[480px] grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        <div class="bg-zinc-900/70 border border-zinc-800/80 rounded-xl p-2.5 sm:p-3 text-center min-w-0 overflow-hidden flex flex-col justify-center">
+          <div class="text-[11px] text-zinc-400 font-medium mb-1 truncate">Progresso</div>
+          <div id="statPercent" class="text-lg sm:text-xl font-bold font-mono text-brand-400 truncate">0.0%</div>
+          <div id="statPercentSub" class="text-[10px] text-zinc-500 mt-0.5 truncate">do ano atual</div>
+        </div>
+        <div class="bg-zinc-900/70 border border-zinc-800/80 rounded-xl p-2.5 sm:p-3 text-center min-w-0 overflow-hidden flex flex-col justify-center">
+          <div id="statCompletedLabel" class="text-[11px] text-zinc-400 font-medium mb-1 truncate">Dias Vividos</div>
+          <div id="statCompleted" class="text-lg sm:text-xl font-bold font-mono text-zinc-100 truncate">0</div>
+          <div id="statCompletedSub" class="text-[10px] text-zinc-500 mt-0.5 truncate">dias passados</div>
+        </div>
+        <div class="bg-zinc-900/70 border border-zinc-800/80 rounded-xl p-2.5 sm:p-3 text-center min-w-0 overflow-hidden flex flex-col justify-center">
+          <div id="statRemainingLabel" class="text-[11px] text-zinc-400 font-medium mb-1 truncate">Dias Restantes</div>
+          <div id="statRemaining" class="text-lg sm:text-xl font-bold font-mono text-zinc-300 truncate">0</div>
+          <div id="statRemainingSub" class="text-[10px] text-zinc-500 mt-0.5 truncate">dias por vir</div>
+        </div>
+        <div class="bg-zinc-900/70 border border-zinc-800/80 rounded-xl p-2.5 sm:p-3 text-center min-w-0 overflow-hidden flex flex-col justify-center">
+          <div id="statPeriodLabel" class="text-[11px] text-zinc-400 font-medium mb-1 truncate">Período</div>
+          <div id="statPeriod" class="text-sm sm:text-base font-bold font-sans text-amber-400 truncate leading-tight">2026</div>
+          <div id="statPeriodSub" class="text-[10px] text-zinc-500 mt-0.5 truncate">ano corrente</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN: Settings Panel (Sidebar) -->
+    <aside class="w-full lg:w-5/12 bg-zinc-900/80 border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-xl">
+      <div class="flex items-center justify-between pb-4 border-b border-zinc-800 mb-5">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <svg class="w-4 h-4 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Personalização
+          </h2>
+          <p class="text-xs text-zinc-400 mt-0.5">Ajuste os dados, cores e proporção da tela</p>
+        </div>
+        <button id="resetDefaultsBtn" type="button" class="text-xs text-zinc-400 hover:text-white underline underline-offset-4 transition">
+          Restaurar Padrão
+        </button>
+      </div>
+
+      <form id="settingsForm" class="space-y-6" onsubmit="event.preventDefault();">
+
+        <!-- 1. TIPO DE VISUALIZAÇÃO & PERSONALIZAÇÃO -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-400"></span>
+            1. Período & Metas
+          </h3>
+
+          <!-- Tipo de Visualização (3 opções) -->
+          <div>
+            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Escolha o Modo</label>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="cursor-pointer">
+                <input type="radio" name="viewMode" value="year" checked class="peer sr-only">
+                <div class="px-2.5 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-400 text-xs font-semibold text-zinc-400 transition flex flex-col items-center justify-center gap-1 text-center">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span class="text-[11px]">Ano Atual</span>
+                  <span class="text-[9px] font-normal text-zinc-500 peer-checked:text-brand-400/80">365 dias</span>
+                </div>
+              </label>
+
+              <label class="cursor-pointer">
+                <input type="radio" name="viewMode" value="month" class="peer sr-only">
+                <div class="px-2.5 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-400 text-xs font-semibold text-zinc-400 transition flex flex-col items-center justify-center gap-1 text-center">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect width="18" height="18" x="3" y="3" rx="2"/>
+                    <path d="M3 9h18"/>
+                    <path d="M9 21V9"/>
+                  </svg>
+                  <span class="text-[11px]">Mês Atual</span>
+                  <span class="text-[9px] font-normal text-zinc-500 peer-checked:text-brand-400/80">28-31 dias</span>
+                </div>
+              </label>
+
+              <label class="cursor-pointer">
+                <input type="radio" name="viewMode" value="goals" class="peer sr-only">
+                <div class="px-2.5 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60 peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-400 text-xs font-semibold text-zinc-400 transition flex flex-col items-center justify-center gap-1 text-center">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                  <span class="text-[11px]">Metas</span>
+                  <span class="text-[9px] font-normal text-zinc-500 peer-checked:text-brand-400/80">Desafios</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Texto no Topo das Bolinhas -->
+          <div>
+            <label for="topTextInput" class="block text-xs font-medium text-zinc-300 mb-1.5 flex justify-between">
+              <span>Texto no Topo (Acima das Bolinhas)</span>
+              <span class="text-zinc-500 font-normal">Opcional</span>
+            </label>
+            <div class="relative">
+              <input type="text" id="topTextInput" value="" autocomplete="off" placeholder="" maxlength="35" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-brand-500 font-medium tracking-wide">
+            </div>
+            <p class="text-[10px] text-zinc-500 mt-1">Opcional. Deixe em branco se preferir apenas as bolinhas.</p>
+          </div>
+
+          <!-- Configurações Específicas do Calendário de Metas -->
+          <div id="goalsConfigContainer" class="p-3.5 bg-zinc-950/80 border border-brand-500/30 rounded-xl space-y-3 hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-brand-400 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 14 14"/>
+                </svg>
+                Parâmetros da Meta
+              </span>
+              <span id="goalSummaryBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20 font-semibold">Dia 1 de 30</span>
+            </div>
+
+            <!-- Presets Rápidos de Dias -->
+            <div>
+              <label class="block text-[11px] text-zinc-400 mb-1.5">Duração Comum do Desafio</label>
+              <div class="grid grid-cols-5 gap-1 text-[11px]">
+                <button type="button" data-days="30" class="goal-preset-btn py-1.5 rounded-lg border border-brand-500 bg-brand-500/20 text-brand-400 font-semibold transition text-center">30d</button>
+                <button type="button" data-days="60" class="goal-preset-btn py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition text-center">60d</button>
+                <button type="button" data-days="75" class="goal-preset-btn py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition text-center">75d</button>
+                <button type="button" data-days="90" class="goal-preset-btn py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition text-center">90d</button>
+                <button type="button" data-days="100" class="goal-preset-btn py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition text-center">100d</button>
+              </div>
+            </div>
+
+            <!-- Campos Manuais de Duração e Data de Início -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label for="goalDaysInput" class="block text-[11px] text-zinc-400 mb-1">Duração Total (dias)</label>
+                <input type="number" id="goalDaysInput" min="7" max="365" value="30" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-brand-500">
+              </div>
+              <div>
+                <label for="goalStartDateInput" class="block text-[11px] text-zinc-400 mb-1">Data de Início</label>
+                <input type="date" id="goalStartDateInput" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-brand-500">
+              </div>
+            </div>
+          </div>
+
+          <!-- Posição Vertical na Tela (Respiro abaixo do Relógio) -->
+          <div>
+            <label for="offsetRange" class="block text-xs font-medium text-zinc-300 mb-1.5 flex items-center justify-between">
+              <span>Posição Vertical na Tela</span>
+              <span id="offsetValBadge" class="text-brand-400 font-mono text-[11px] font-semibold bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20">+9.5%</span>
+            </label>
+            <input type="range" id="offsetRange" min="0" max="18" step="0.5" value="9.5" class="w-full accent-brand-500 bg-zinc-800 h-1.5 rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-zinc-500 mt-1">
+              <span>Centro (0%)</span>
+              <span class="text-zinc-400 font-medium">Abaixo do Relógio (+9.5%)</span>
+              <span>Mais Baixo (+18%)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. SISTEMA & APARELHO -->
+        <div class="space-y-4 pt-4 border-t border-zinc-800">
+          <h3 class="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+            2. Sistema & Aparelho
+          </h3>
+
+          <!-- Plataforma: iPhone vs Android -->
+          <div>
+            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Selecione o Sistema</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="platformIosBtn" class="platform-btn px-3 py-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition border-brand-500 bg-brand-500/10 text-brand-400 shadow-sm">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.87-.9.04-2 .6-2.64 1.36-.56.65-1.06 1.71-.93 2.74 1.01.08 2.03-.49 2.65-1.23z"/>
+                </svg>
+                <span>iPhone (iOS)</span>
+              </button>
+              <button type="button" id="platformAndroidBtn" class="platform-btn px-3 py-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:text-zinc-200">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5896 8.3976 13.8437 8 12 8s-3.5896.3976-5.1368.9507L4.8409 5.4477a.416.416 0 00-.5676-.1521.416.416 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
+                </svg>
+                <span>Android</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Presets do Aparelho -->
+          <div>
+            <label for="devicePresetSelect" class="block text-xs font-medium text-zinc-300 mb-1.5 flex items-center justify-between">
+              <span id="deviceModelLabel">Modelo do iPhone</span>
+              <span class="text-[11px] text-zinc-500 font-normal">Resoluções nativas</span>
+            </label>
+            <select id="devicePresetSelect" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-brand-500 transition font-sans">
+              <!-- Preenchido dinamicamente com base na plataforma -->
+            </select>
+          </div>
+
+          <!-- Campos Manuais de Largura e Altura -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="widthInput" class="block text-xs font-medium text-zinc-400 mb-1">Largura (px)</label>
+              <input type="number" id="widthInput" value="1170" min="300" max="5000" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono focus:outline-none focus:border-brand-500 transition">
+            </div>
+            <div>
+              <label for="heightInput" class="block text-xs font-medium text-zinc-400 mb-1">Altura (px)</label>
+              <input type="number" id="heightInput" value="2532" min="300" max="8000" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 font-mono focus:outline-none focus:border-brand-500 transition">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. PERSONALIZAÇÃO DE CORES & PALETAS -->
+        <div class="space-y-4 pt-4 border-t border-zinc-800">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              3. Cores dos Blocos
+            </h3>
+          </div>
+
+          <!-- Paletas Rápidas Pré-definidas -->
+          <div>
+            <label class="block text-xs font-medium text-zinc-400 mb-2">Temas Rápidos</label>
+            <div class="grid grid-cols-6 gap-1.5">
+              <button type="button" data-preset="coral" class="palette-preset p-1.5 rounded-lg border border-brand-500/50 hover:border-brand-400 transition flex flex-col items-center gap-1 bg-zinc-950 group" title="Sunset Coral (Estilo Referência / Bolinhas)">
+                <div class="w-full h-4 rounded bg-[#0e0e0e] flex items-center justify-center gap-0.5 border border-zinc-800">
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#ffffff]"></div>
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#f56b3f]"></div>
+                </div>
+                <span class="text-[9px] text-zinc-200 group-hover:text-white font-medium">Coral</span>
+              </button>
+
+              <button type="button" data-preset="obsidian" class="palette-preset p-1.5 rounded-lg border border-zinc-800 hover:border-zinc-600 transition flex flex-col items-center gap-1 bg-zinc-950 group" title="Obsidian & White">
+                <div class="w-full h-4 rounded bg-[#09090b] flex items-center justify-center gap-0.5 border border-zinc-800">
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#f8fafc]"></div>
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#38bdf8]"></div>
+                </div>
+                <span class="text-[9px] text-zinc-400 group-hover:text-zinc-200">Minimal</span>
+              </button>
+
+              <button type="button" data-preset="emerald" class="palette-preset p-1.5 rounded-lg border border-zinc-800 hover:border-zinc-600 transition flex flex-col items-center gap-1 bg-zinc-950 group" title="Matrix Emerald">
+                <div class="w-full h-4 rounded bg-[#05130e] flex items-center justify-center gap-0.5 border border-zinc-800">
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></div>
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#34d399]"></div>
+                </div>
+                <span class="text-[9px] text-zinc-400 group-hover:text-zinc-200">Esmeralda</span>
+              </button>
+
+              <button type="button" data-preset="amber" class="palette-preset p-1.5 rounded-lg border border-zinc-800 hover:border-zinc-600 transition flex flex-col items-center gap-1 bg-zinc-950 group" title="Warm Amber">
+                <div class="w-full h-4 rounded bg-[#18110d] flex items-center justify-center gap-0.5 border border-zinc-800">
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></div>
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></div>
+                </div>
+                <span class="text-[9px] text-zinc-400 group-hover:text-zinc-200">Âmbar</span>
+              </button>
+
+              <button type="button" data-preset="midnight" class="palette-preset p-1.5 rounded-lg border border-zinc-800 hover:border-zinc-600 transition flex flex-col items-center gap-1 bg-zinc-950 group" title="Midnight Violet">
+                <div class="w-full h-4 rounded bg-[#030712] flex items-center justify-center gap-0.5 border border-zinc-800">
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#818cf8]"></div>
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#6366f1]"></div>
+                </div>
+                <span class="text-[9px] text-zinc-400 group-hover:text-zinc-200">Violeta</span>
+              </button>
+
+              <button type="button" data-preset="monochrome" class="palette-preset p-1.5 rounded-lg border border-zinc-800 hover:border-zinc-600 transition flex flex-col items-center gap-1 bg-zinc-950 group" title="Pure Monochrome">
+                <div class="w-full h-4 rounded bg-[#000000] flex items-center justify-center gap-0.5 border border-zinc-800">
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#e5e5e5]"></div>
+                  <div class="w-1.5 h-1.5 rounded-full bg-[#ffffff]"></div>
+                </div>
+                <span class="text-[9px] text-zinc-400 group-hover:text-zinc-200">Mono</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Color Pickers Individuais -->
+          <div class="grid grid-cols-2 gap-3">
+            <!-- Fundo -->
+            <div class="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800/80">
+              <label for="bgColorInput" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Fundo da Tela</label>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg overflow-hidden border border-zinc-700/80 shadow-sm flex-shrink-0">
+                  <input type="color" id="bgColorInput" value="#09090b">
+                </div>
+                <input type="text" id="bgColorText" value="#09090B" class="w-full bg-transparent text-xs font-mono text-zinc-200 uppercase focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Já Vivido -->
+            <div class="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800/80">
+              <label for="pastColorInput" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Blocos Vividos</label>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg overflow-hidden border border-zinc-700/80 shadow-sm flex-shrink-0">
+                  <input type="color" id="pastColorInput" value="#f8fafc">
+                </div>
+                <input type="text" id="pastColorText" value="#F8FAFC" class="w-full bg-transparent text-xs font-mono text-zinc-200 uppercase focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Bloco Atual -->
+            <div class="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800/80">
+              <label for="currentColorInput" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Bloco Atual (Hoje)</label>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg overflow-hidden border border-zinc-700/80 shadow-sm flex-shrink-0">
+                  <input type="color" id="currentColorInput" value="#38bdf8">
+                </div>
+                <input type="text" id="currentColorText" value="#38BDF8" class="w-full bg-transparent text-xs font-mono text-zinc-200 uppercase focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Futuro -->
+            <div class="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800/80">
+              <label for="futureColorInput" class="block text-[11px] font-medium text-zinc-400 mb-1.5">Blocos Futuros</label>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg overflow-hidden border border-zinc-700/80 shadow-sm flex-shrink-0">
+                  <input type="color" id="futureColorInput" value="#27272a">
+                </div>
+                <input type="text" id="futureColorText" value="#27272A" class="w-full bg-transparent text-xs font-mono text-zinc-200 uppercase focus:outline-none">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ação Principal: Gerar Link para Automação & Download Avulso -->
+        <div class="pt-4 border-t border-zinc-800 space-y-2.5">
+          <button id="openAutomationModalBtn" type="button" class="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-brand-500 via-sky-500 to-indigo-600 hover:from-brand-400 hover:to-indigo-500 text-white shadow-xl shadow-brand-500/25 transition active:scale-[0.98] flex items-center justify-center gap-2.5 group">
+            <svg class="w-4 h-4 group-hover:scale-110 transition-transform text-brand-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span>Gerar Link para Automação</span>
+          </button>
+          <div class="flex items-center justify-between px-1 text-[11px] text-zinc-500">
+            <span>Atualiza a tela sozinho todo dia</span>
+            <button id="fallbackDownloadBtn" type="button" class="text-zinc-400 hover:text-white underline underline-offset-2 transition">
+              Baixar PNG avulso
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </aside>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative mt-auto border-t border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md py-8 text-xs text-zinc-400">
+    <!-- Subtle top hairline reflection -->
+    <div class="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-zinc-700/40 to-transparent pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-5 text-center md:text-left">
+      <!-- Left side: Brand & description -->
+      <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+        <span class="font-bold tracking-tight text-white flex items-center gap-2 text-sm">
+          Dias Passados
+        </span>
+        <span class="hidden sm:inline-block text-zinc-600">•</span>
+        <span class="text-zinc-400 text-xs">
+          Seu tempo em perspectiva • Papel de parede dinâmico para tela de bloqueio
+        </span>
+      </div>
+
+      <!-- Right side: GitHub CTA -->
+      <div class="flex items-center gap-3">
+        <a href="https://github.com/AlonsoRafael/DiasPassados" 
+           target="_blank" 
+           rel="noopener noreferrer" 
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-200 hover:text-white transition-all duration-200 text-xs font-medium group shadow-sm hover:shadow-[0_0_20px_rgba(56,189,248,0.15)] hover:border-brand-500/30">
+          <svg class="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          <span>Ver no GitHub</span>
+          <span class="text-zinc-500 group-hover:text-zinc-300 font-mono text-[11px]">AlonsoRafael/DiasPassados</span>
+          <svg class="w-3.5 h-3.5 text-zinc-500 group-hover:text-brand-400 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-zinc-900 border border-zinc-700 text-zinc-100 px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-medium">
+    <svg class="w-4 h-4 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <span id="toastMsg">Mensagem</span>
+  </div>
+
+  <!-- INSTALLATION STEPS MODAL (Inspirado na Automação do LifeCal) -->
+  <div id="automationModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-all duration-300">
+    <!-- Backdrop overlay -->
+    <div id="modalBackdrop" class="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"></div>
+
+    <!-- Modal Card Container -->
+    <div id="modalCard" class="relative w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-t-[2.5rem] sm:rounded-3xl p-6 sm:p-8 shadow-2xl max-h-[92vh] overflow-y-auto z-10 flex flex-col transform translate-y-8 sm:translate-y-0 sm:scale-95 transition-all duration-300">
+      
+      <!-- Top Drag Handle -->
+      <div class="w-12 h-1 bg-zinc-800 rounded-full mx-auto mb-5 sm:hidden"></div>
+
+      <!-- Header -->
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold tracking-tight text-white mb-2">Passos para Automação</h2>
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          Defina as opções do seu papel de parede, crie a rotina no seu aparelho e adicione as ações para atualizar sua tela de bloqueio todo dia às 06:00.
+        </p>
+      </div>
+
+      <!-- Steps List -->
+      <div class="space-y-6">
+
+        <!-- PASSO 1: Definir o Papel de Parede -->
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="w-6 h-6 rounded bg-white text-zinc-950 font-bold flex items-center justify-center text-xs shadow-sm">
+              1
+            </div>
+            <h3 class="text-sm font-bold text-white tracking-wide">Definir o Papel de Parede</h3>
+          </div>
+
+          <div class="space-y-3 pl-9">
+            <!-- Estilo do Período -->
+            <div>
+              <label for="modalLayoutStyleSelect" class="block text-xs text-zinc-400 mb-1.5 font-medium">Estilo do Período</label>
+              <select id="modalLayoutStyleSelect" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500 transition">
+                <option value="year">Dias do Ano (todos os 365 dias do ano)</option>
+                <option value="month">Dias do Mês (mês corrente)</option>
+                <option value="goals">Calendário de Metas (desafios / hábitos)</option>
+              </select>
+            </div>
+
+            <!-- Seletor de Plataforma -->
+            <div>
+              <label class="block text-xs text-zinc-400 mb-1.5 font-medium">Plataforma</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="modalPlatformIosBtn" class="px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition border-brand-500 bg-brand-500/10 text-brand-400">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.87-.9.04-2 .6-2.64 1.36-.56.65-1.06 1.71-.93 2.74 1.01.08 2.03-.49 2.65-1.23z"/>
+                  </svg>
+                  <span>iPhone (iOS)</span>
+                </button>
+                <button type="button" id="modalPlatformAndroidBtn" class="px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5896 8.3976 13.8437 8 12 8s-3.5896.3976-5.1368.9507L4.8409 5.4477a.416.416 0 00-.5676-.1521.416.416 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
+                  </svg>
+                  <span>Android</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Modelo do Aparelho -->
+            <div>
+              <label for="modalPhoneModelSelect" id="modalPhoneModelLabel" class="block text-xs text-zinc-400 mb-1.5 font-medium">Modelo do iPhone</label>
+              <select id="modalPhoneModelSelect" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500 transition font-sans">
+                <!-- Preenchido dinamicamente -->
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- INSTRUÇÕES DO IPHONE (PASSOS 2 & 3) -->
+        <div id="modalInstructionsIos" class="space-y-6">
+          <!-- PASSO 2: Criar Automação -->
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-6 h-6 rounded bg-white text-zinc-950 font-bold flex items-center justify-center text-xs shadow-sm">
+                2
+              </div>
+              <h3 class="text-sm font-bold text-white tracking-wide">Criar Automação no iPhone</h3>
+            </div>
+
+            <div class="pl-9">
+              <div class="border border-zinc-800 bg-zinc-900/60 rounded-xl p-3.5 text-xs text-zinc-300 leading-relaxed font-sans">
+                Abra o app <span class="font-bold text-white">Atalhos</span> → Vá na aba <span class="font-bold text-white">Automação</span> → Toque em <span class="font-bold text-white">Nova Automação (+)</span> → Escolha <span class="font-bold text-white">Hora do Dia</span> → Defina para <span class="font-bold text-white">06:00</span> → Marque <span class="font-bold text-white">"Diariamente"</span> → Selecione <span class="font-bold text-white">"Executar Imediatamente"</span> → Toque em <span class="font-bold text-white">"Novo Atalho em Branco"</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASSO 3: Configurar Ações do Atalho -->
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-6 h-6 rounded bg-white text-zinc-950 font-bold flex items-center justify-center text-xs shadow-sm">
+                3
+              </div>
+              <h3 class="text-sm font-bold text-white tracking-wide">Configurar Ações do Atalho</h3>
+            </div>
+
+            <div class="pl-9">
+              <div class="border border-zinc-800 bg-zinc-900/60 rounded-xl p-4 text-xs text-zinc-300 space-y-3 font-sans">
+                
+                <div class="text-[10px] uppercase font-bold tracking-wider text-zinc-500">
+                  ADICIONE ESTAS DUAS AÇÕES:
+                </div>
+
+                <!-- 3.1 Obter Conteúdo da URL -->
+                <div class="space-y-1.5">
+                  <div>
+                    <span class="font-bold text-white">3.1 "Obter Conteúdo da URL"</span> → cole o link gerado abaixo:
+                  </div>
+
+                  <div class="relative flex items-center">
+                    <input type="text" id="modalUrlInput" readonly class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-3 pr-10 py-2.5 text-[11px] font-mono text-zinc-300 select-all focus:outline-none focus:border-brand-500">
+                    <button id="modalCopyUrlBtn" type="button" class="absolute right-1.5 p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white transition" title="Copiar URL">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 3.2 Definir Papel de Parede -->
+                <div>
+                  <span class="font-bold text-white">3.2 "Definir Foto do Papel de Parede"</span> → escolha <span class="font-bold text-white">"Tela de Bloqueio"</span>
+                </div>
+
+                <!-- Aviso Importante -->
+                <div class="border border-amber-600/40 bg-amber-950/20 rounded-lg p-3 text-amber-200/90 text-xs leading-relaxed">
+                  <span class="font-bold text-amber-400">Importante:</span> Na ação "Definir Foto do Papel de Parede", toque na setinha (<span class="font-mono">→</span>) para expandir as opções → <span class="font-bold text-amber-300">desative "Ajustar ao Assunto" e desative "Mostrar Pré-visualização"</span>.
+                  <p class="text-[11px] text-amber-400/70 mt-1">
+                    Isso impede que o iOS corte a imagem e garante que o papel de parede seja atualizado silenciosamente todos os dias sem pedir confirmação.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INSTRUÇÕES DO ANDROID (PASSOS 2 & 3) -->
+        <div id="modalInstructionsAndroid" class="space-y-6 hidden">
+          <!-- PASSO 2: Criar Automação (Android) -->
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-6 h-6 rounded bg-white text-zinc-950 font-bold flex items-center justify-center text-xs shadow-sm">
+                2
+              </div>
+              <h3 class="text-sm font-bold text-white tracking-wide">Criar Automação no Android</h3>
+            </div>
+
+            <div class="pl-9">
+              <div class="border border-zinc-800 bg-zinc-900/60 rounded-xl p-3.5 text-xs text-zinc-300 leading-relaxed font-sans space-y-1.5">
+                <p>
+                  No seu celular Android, instale o app gratuito <span class="font-bold text-white">MacroDroid</span> na Play Store.
+                </p>
+                <p class="text-zinc-400">
+                  Na aba <span class="font-bold text-white">Macros</span> → Toque em <span class="font-bold text-white">Adicionar Macro (+)</span> → Em Gatilhos: <span class="font-bold text-white">Data/Hora</span> → <span class="font-bold text-white">Hora do Dia</span> → Defina para <span class="font-bold text-white">06:00 Diário</span>.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASSO 3: Configurar Ação de Troca Diária (Android) -->
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-6 h-6 rounded bg-white text-zinc-950 font-bold flex items-center justify-center text-xs shadow-sm">
+                3
+              </div>
+              <h3 class="text-sm font-bold text-white tracking-wide">Configurar Ação de Troca Diária</h3>
+            </div>
+
+            <div class="pl-9">
+              <div class="border border-zinc-800 bg-zinc-900/60 rounded-xl p-4 text-xs text-zinc-300 space-y-3 font-sans">
+                
+                <div class="text-[10px] uppercase font-bold tracking-wider text-zinc-500">
+                  ADICIONE AS DUAS AÇÕES:
+                </div>
+
+                <!-- 3.1 Requisição HTTP -->
+                <div class="space-y-1.5">
+                  <div>
+                    <span class="font-bold text-white">3.1 "Requisição HTTP (GET)"</span> → cole a URL abaixo e salve o arquivo como <span class="font-mono text-brand-400">wallpaper.png</span>:
+                  </div>
+
+                  <div class="relative flex items-center">
+                    <input type="text" id="modalUrlInputAndroid" readonly class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-3 pr-10 py-2.5 text-[11px] font-mono text-zinc-300 select-all focus:outline-none focus:border-brand-500">
+                    <button id="modalCopyUrlBtnAndroid" type="button" class="absolute right-1.5 p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white transition" title="Copiar URL">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 3.2 Definir Papel de Parede -->
+                <div>
+                  <span class="font-bold text-white">3.2 "Definir Papel de Parede"</span> → escolha o arquivo baixado <span class="font-mono text-zinc-200">wallpaper.png</span> e aplique na <span class="font-bold text-white">Tela de Bloqueio</span>.
+                </div>
+
+                <!-- Aviso Android -->
+                <div class="border border-emerald-600/40 bg-emerald-950/20 rounded-lg p-3 text-emerald-200/90 text-xs leading-relaxed">
+                  <span class="font-bold text-emerald-400">Pronto!</span> Ao salvar a macro, seu celular baixará automaticamente a nova imagem todos os dias pela manhã e atualizará a tela de bloqueio.
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="mt-8 pt-4 border-t border-zinc-800 flex items-center justify-between">
+        <button id="modalBackBtn" type="button" class="px-5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-900 transition">
+          Voltar
+        </button>
+
+        <button id="modalCloseBtn" type="button" class="px-6 py-2.5 rounded-xl text-xs font-semibold bg-white text-zinc-950 hover:bg-zinc-200 transition shadow-sm font-medium">
+          Fechar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modular JavaScript Architecture -->
+  <script src="js/presets.js"></script>
+  <script src="js/calculator.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

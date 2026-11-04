@@ -1,0 +1,21 @@
+{
+  "name": "diaspassados",
+  "version": "1.0.0",
+  "description": "Papel de parede dinâmico para automação no celular inspirado no Life Calendar",
+  "homepage": "https://github.com/AlonsoRafael/DiasPassados",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlonsoRafael/DiasPassados.git"
+  },
+  "private": true,
+  "scripts": {
+    "start": "serve .",
+    "dev": "serve ."
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/days",
+      "destination": "/api/wallpaper?view=year"
+    },
+    {
+      "source": "/days.png",
+      "destination": "/api/wallpaper?view=year"
+    },
+    {
+      "source": "/month",
+      "destination": "/api/wallpaper?view=month"
+    },
+    {
+      "source": "/month.png",
+      "destination": "/api/wallpaper?view=month"
+    },
+    {
+      "source": "/goals",
+      "destination": "/api/wallpaper?view=goals"
+    },
+    {
+      "source": "/goals.png",
+      "destination": "/api/wallpaper?view=goals"
+    }
+  ]
+}
