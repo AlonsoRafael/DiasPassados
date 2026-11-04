@@ -297,7 +297,7 @@
     }
 
     const text = params.get('text') || params.get('topText');
-    if (text && text.trim().length > 0 && text.trim().toUpperCase() !== 'MEMENTO MORI') {
+    if (text && text.trim().length > 0) {
       state.topText = text.trim();
     } else {
       state.topText = '';
@@ -774,8 +774,16 @@
   });
 
   // Modal Triggers
-  elements.openAutomationModalBtn.addEventListener('click', openModal);
+  elements.openAutomationModalBtn.addEventListener('click', () => {
+    if (elements.topTextInput) {
+      state.topText = elements.topTextInput.value.trim();
+    }
+    openModal();
+  });
   elements.fallbackDownloadBtn.addEventListener('click', () => {
+    if (elements.topTextInput) {
+      state.topText = elements.topTextInput.value.trim();
+    }
     const stats = window.calculateStats(state);
     window.downloadWallpaper(state, stats, elements.fallbackDownloadBtn, showToast);
   });

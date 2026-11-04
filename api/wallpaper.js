@@ -1,5 +1,152 @@
 const zlib = require('zlib');
 
+// Complete 5x7 bitmap font definitions (ASCII characters)
+const FONT_5X7 = {
+  ' ': [0x00,0x00,0x00,0x00,0x00,0x00,0x00],
+  '!': [0x04,0x04,0x04,0x04,0x04,0x00,0x04],
+  '"': [0x0a,0x0a,0x00,0x00,0x00,0x00,0x00],
+  '#': [0x0a,0x0a,0x1f,0x0a,0x1f,0x0a,0x0a],
+  '$': [0x04,0x0f,0x14,0x0e,0x05,0x1e,0x04],
+  '%': [0x19,0x19,0x02,0x04,0x08,0x13,0x13],
+  '&': [0x0c,0x12,0x14,0x08,0x15,0x12,0x0d],
+  '\'': [0x04,0x04,0x02,0x00,0x00,0x00,0x00],
+  '(': [0x02,0x04,0x08,0x08,0x08,0x04,0x02],
+  ')': [0x08,0x04,0x02,0x02,0x02,0x04,0x08],
+  '*': [0x00,0x04,0x15,0x0e,0x15,0x04,0x00],
+  '+': [0x00,0x04,0x04,0x1f,0x04,0x04,0x00],
+  ',': [0x00,0x00,0x00,0x00,0x06,0x06,0x04],
+  '-': [0x00,0x00,0x00,0x1f,0x00,0x00,0x00],
+  '.': [0x00,0x00,0x00,0x00,0x00,0x0c,0x0c],
+  '/': [0x00,0x01,0x02,0x04,0x08,0x10,0x00],
+  '0': [0x0e,0x11,0x13,0x15,0x19,0x11,0x0e],
+  '1': [0x04,0x0c,0x04,0x04,0x04,0x04,0x0e],
+  '2': [0x0e,0x11,0x01,0x02,0x04,0x08,0x1f],
+  '3': [0x1f,0x01,0x02,0x0e,0x01,0x11,0x0e],
+  '4': [0x02,0x06,0x0a,0x12,0x1f,0x02,0x02],
+  '5': [0x1f,0x10,0x1e,0x01,0x01,0x11,0x0e],
+  '6': [0x06,0x08,0x10,0x1e,0x11,0x11,0x0e],
+  '7': [0x1f,0x01,0x02,0x04,0x08,0x08,0x08],
+  '8': [0x0e,0x11,0x11,0x0e,0x11,0x11,0x0e],
+  '9': [0x0e,0x11,0x11,0x0f,0x01,0x02,0x0c],
+  ':': [0x00,0x0c,0x0c,0x00,0x0c,0x0c,0x00],
+  ';': [0x00,0x0c,0x0c,0x00,0x0c,0x04,0x08],
+  '<': [0x02,0x04,0x08,0x10,0x08,0x04,0x02],
+  '=': [0x00,0x1f,0x00,0x1f,0x00,0x00,0x00],
+  '>': [0x08,0x04,0x02,0x01,0x02,0x04,0x08],
+  '?': [0x0e,0x11,0x01,0x02,0x04,0x00,0x04],
+  '@': [0x0e,0x11,0x01,0x0d,0x15,0x15,0x0e],
+  'A': [0x0e,0x11,0x11,0x1f,0x11,0x11,0x11],
+  'B': [0x1e,0x11,0x11,0x1e,0x11,0x11,0x1e],
+  'C': [0x0e,0x11,0x10,0x10,0x10,0x11,0x0e],
+  'D': [0x1e,0x11,0x11,0x11,0x11,0x11,0x1e],
+  'E': [0x1f,0x10,0x10,0x1e,0x10,0x10,0x1f],
+  'F': [0x1f,0x10,0x10,0x1e,0x10,0x10,0x10],
+  'G': [0x0e,0x11,0x10,0x17,0x11,0x11,0x0f],
+  'H': [0x11,0x11,0x11,0x1f,0x11,0x11,0x11],
+  'I': [0x0e,0x04,0x04,0x04,0x04,0x04,0x0e],
+  'J': [0x07,0x02,0x02,0x02,0x02,0x12,0x0c],
+  'K': [0x11,0x12,0x14,0x18,0x14,0x12,0x11],
+  'L': [0x10,0x10,0x10,0x10,0x10,0x10,0x1f],
+  'M': [0x11,0x1b,0x15,0x15,0x11,0x11,0x11],
+  'N': [0x11,0x19,0x15,0x13,0x11,0x11,0x11],
+  'O': [0x0e,0x11,0x11,0x11,0x11,0x11,0x0e],
+  'P': [0x1e,0x11,0x11,0x1e,0x10,0x10,0x10],
+  'Q': [0x0e,0x11,0x11,0x11,0x15,0x12,0x0d],
+  'R': [0x1e,0x11,0x11,0x1e,0x14,0x12,0x11],
+  'S': [0x0e,0x11,0x10,0x0e,0x01,0x11,0x0e],
+  'T': [0x1f,0x04,0x04,0x04,0x04,0x04,0x04],
+  'U': [0x11,0x11,0x11,0x11,0x11,0x11,0x0e],
+  'V': [0x11,0x11,0x11,0x11,0x11,0x0a,0x04],
+  'W': [0x11,0x11,0x11,0x15,0x15,0x1b,0x11],
+  'X': [0x11,0x11,0x0a,0x04,0x0a,0x11,0x11],
+  'Y': [0x11,0x11,0x0a,0x04,0x04,0x04,0x04],
+  'Z': [0x1f,0x01,0x02,0x04,0x08,0x10,0x1f],
+  '[': [0x0e,0x08,0x08,0x08,0x08,0x08,0x0e],
+  '\\': [0x00,0x10,0x08,0x04,0x02,0x01,0x00],
+  ']': [0x0e,0x02,0x02,0x02,0x02,0x02,0x0e],
+  '^': [0x04,0x0a,0x11,0x00,0x00,0x00,0x00],
+  '_': [0x00,0x00,0x00,0x00,0x00,0x00,0x1f],
+  '`': [0x08,0x04,0x02,0x00,0x00,0x00,0x00],
+  'a': [0x00,0x00,0x0e,0x01,0x0f,0x11,0x0f],
+  'b': [0x10,0x10,0x16,0x19,0x11,0x11,0x1e],
+  'c': [0x00,0x00,0x0e,0x10,0x10,0x11,0x0e],
+  'd': [0x01,0x01,0x0d,0x13,0x11,0x11,0x0f],
+  'e': [0x00,0x00,0x0e,0x11,0x1f,0x10,0x0f],
+  'f': [0x06,0x09,0x08,0x1c,0x08,0x08,0x08],
+  'g': [0x00,0x00,0x0f,0x11,0x0f,0x01,0x0e],
+  'h': [0x10,0x10,0x16,0x19,0x11,0x11,0x11],
+  'i': [0x04,0x00,0x0c,0x04,0x04,0x04,0x0e],
+  'j': [0x02,0x00,0x06,0x02,0x02,0x12,0x0c],
+  'k': [0x10,0x10,0x12,0x14,0x18,0x14,0x12],
+  'l': [0x0c,0x04,0x04,0x04,0x04,0x04,0x0e],
+  'm': [0x00,0x00,0x1a,0x15,0x15,0x11,0x11],
+  'n': [0x00,0x00,0x16,0x19,0x11,0x11,0x11],
+  'o': [0x00,0x00,0x0e,0x11,0x11,0x11,0x0e],
+  'p': [0x00,0x00,0x1e,0x11,0x1e,0x10,0x10],
+  'q': [0x00,0x00,0x0d,0x13,0x0f,0x01,0x01],
+  'r': [0x00,0x00,0x16,0x19,0x10,0x10,0x10],
+  's': [0x00,0x00,0x0f,0x10,0x0e,0x01,0x1e],
+  't': [0x08,0x08,0x1c,0x08,0x08,0x09,0x06],
+  'u': [0x00,0x00,0x11,0x11,0x11,0x13,0x0d],
+  'v': [0x00,0x00,0x11,0x11,0x11,0x0a,0x04],
+  'w': [0x00,0x00,0x11,0x11,0x15,0x15,0x0a],
+  'x': [0x00,0x00,0x11,0x0a,0x04,0x0a,0x11],
+  'y': [0x00,0x00,0x11,0x11,0x0f,0x01,0x0e],
+  'z': [0x00,0x00,0x1f,0x02,0x04,0x08,0x1f],
+  '·': [0x00,0x00,0x00,0x0e,0x0e,0x00,0x00]
+};
+
+function getGlyph(ch) {
+  if (FONT_5X7[ch]) return FONT_5X7[ch];
+  const upper = ch.toUpperCase();
+  if (FONT_5X7[upper]) return FONT_5X7[upper];
+  return FONT_5X7[' '];
+}
+
+function measureBitmapText(text, scale) {
+  let w = 0;
+  const charWidth = 5 * scale;
+  const charSpacing = scale >= 3 ? Math.round(scale * 1.2) : scale;
+  const spaceWidth = 3 * scale;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === ' ') {
+      w += spaceWidth;
+    } else {
+      w += charWidth + charSpacing;
+    }
+  }
+  return w > 0 ? w - charSpacing : 0;
+}
+
+function drawBitmapText(setPixel, text, startX, startY, scale, color) {
+  let curX = startX;
+  const charWidth = 5 * scale;
+  const charSpacing = scale >= 3 ? Math.round(scale * 1.2) : scale;
+  const spaceWidth = 3 * scale;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === ' ') {
+      curX += spaceWidth;
+      continue;
+    }
+    const glyph = getGlyph(ch);
+    for (let r = 0; r < 7; r++) {
+      const bits = glyph[r];
+      for (let c = 0; c < 5; c++) {
+        if (bits & (1 << (4 - c))) {
+          for (let dy = 0; dy < scale; dy++) {
+            for (let dx = 0; dx < scale; dx++) {
+              setPixel(curX + c * scale + dx, startY + r * scale + dy, color.r, color.g, color.b, 255);
+            }
+          }
+        }
+      }
+    }
+    curX += charWidth + charSpacing;
+  }
+}
+
 // Helper to convert hex to RGB
 function hexToRgb(hex, fallback = { r: 255, g: 255, b: 255 }) {
   if (!hex) return fallback;
@@ -106,7 +253,7 @@ function buildSVG({ width, height, viewMode, bg, past, current, future, stats, t
   const gridTotalW = (cols * cellSize) + ((cols - 1) * gapSize);
   const gridTotalH = (rows * cellSize) + ((rows - 1) * gapSize);
 
-  // Top Text measurements (opcional, posicionado elegantemente acima das bolinhas)
+  // Top Text measurements
   const hasTopText = Boolean(topText && topText.trim().length > 0);
   const cleanTopText = hasTopText ? topText.trim().toUpperCase() : '';
   const topTextFontSize = Math.max(13, height * 0.015);
@@ -119,7 +266,6 @@ function buildSVG({ width, height, viewMode, bg, past, current, future, stats, t
   const footerTotalHeight = footerFontSize + footerSpacing;
 
   const totalCompositionH = topTextTotalHeight + gridTotalH + footerTotalHeight;
-  // Deslocamento vertical para baixo (respiro perfeito abaixo do relógio da tela de bloqueio)
   const verticalOffset = height * (typeof offsetFactor === 'number' ? offsetFactor : 0.095);
   const topContentY = ((height - totalCompositionH) / 2) + verticalOffset;
   const textY = topContentY + (topTextFontSize / 2);
@@ -197,7 +343,7 @@ module.exports = async function handler(req, res) {
     const height = Math.min(8000, Math.max(300, parseInt(q.height || q.h, 10) || 2532));
     const viewMode = (q.view === 'goals' || q.view === 'meta' || reqUrl.includes('/goals')) ? 'goals' : ((q.view === 'month' || reqUrl.includes('/month')) ? 'month' : 'year');
     const rawText = (q.text || q.topText || '').trim();
-    const topText = (rawText.toUpperCase() === 'MEMENTO MORI') ? '' : rawText.toUpperCase();
+    const topText = rawText ? rawText.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase() : '';
     const bg = q.bg || '#0e0e0e';
     const past = q.past || '#ffffff';
     const current = q.current || '#f56b3f';
@@ -205,7 +351,7 @@ module.exports = async function handler(req, res) {
     const offsetQuery = parseFloat(q.offset || q.y);
     const offsetFactor = !isNaN(offsetQuery) ? Math.min(0.25, Math.max(0, offsetQuery / 100)) : 0.095;
 
-    // Time calculations using local time (UTC-3 for Brazil or UTC)
+    // Time calculations using local time (UTC-3 for Brazil)
     const tzOffsetMs = 3 * 60 * 60 * 1000;
     const now = new Date(Date.now() - tzOffsetMs);
 
@@ -233,9 +379,8 @@ module.exports = async function handler(req, res) {
     } else if (viewMode === 'month') {
       const year = now.getUTCFullYear();
       const month = now.getUTCMonth();
-      // Total days in current month
       const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-      const dayOfMonth = now.getUTCDate(); // 1..31
+      const dayOfMonth = now.getUTCDate();
 
       stats = {
         total: daysInMonth,
@@ -267,120 +412,140 @@ module.exports = async function handler(req, res) {
       };
     }
 
-    // Try @resvg/resvg-js if installed in environment
-    try {
-      const { Resvg } = require('@resvg/resvg-js');
+    // Client explicitly asked for SVG
+    if (q.format === 'svg') {
       const svg = buildSVG({ width, height, viewMode, bg, past, current, future, stats, topText, offsetFactor });
-      const resvg = new Resvg(svg, {
-        fitTo: { mode: 'width', value: width }
-      });
-      const pngBuffer = resvg.render().asPng();
-
-      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400');
-      return res.end(pngBuffer);
-    } catch (err) {
-      // If resvg not installed, check if client wants SVG or generate pure PNG
-      if (q.format === 'svg') {
-        const svg = buildSVG({ width, height, viewMode, bg, past, current, future, stats, topText, offsetFactor });
-        res.setHeader('Content-Type', 'image/svg+xml');
-        res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400');
-        return res.end(svg);
-      }
+      return res.end(svg);
+    }
 
-      // Fast Pure PNG Fallback (0 dependencies, 100% native Node.js)
-      const bgRgb = hexToRgb(bg, { r: 14, g: 14, b: 14 });
-      const pastRgb = hexToRgb(past, { r: 255, g: 255, b: 255 });
-      const curRgb = hexToRgb(current, { r: 245, g: 107, b: 63 });
-      const futRgb = hexToRgb(future, { r: 51, g: 51, b: 54 });
+    // Fast, 100% Reliable Native PNG Renderer (with complete font & text rasterization)
+    const bgRgb = hexToRgb(bg, { r: 14, g: 14, b: 14 });
+    const pastRgb = hexToRgb(past, { r: 255, g: 255, b: 255 });
+    const curRgb = hexToRgb(current, { r: 245, g: 107, b: 63 });
+    const futRgb = hexToRgb(future, { r: 51, g: 51, b: 54 });
 
-      const isMonthMode = (viewMode === 'month');
-      const isGoalsMode = (viewMode === 'goals');
+    const isMonthMode = (viewMode === 'month');
+    const isGoalsMode = (viewMode === 'goals');
 
-      let cols = 15;
-      if (isMonthMode) {
-        cols = 7;
-      } else if (isGoalsMode) {
-        if (stats.total <= 35) cols = 7;
-        else if (stats.total <= 100) cols = 10;
-        else cols = 15;
-      }
-      const rows = Math.ceil(stats.total / cols);
+    let cols = 15;
+    if (isMonthMode) {
+      cols = 7;
+    } else if (isGoalsMode) {
+      if (stats.total <= 35) cols = 7;
+      else if (stats.total <= 100) cols = 10;
+      else cols = 15;
+    }
+    const rows = Math.ceil(stats.total / cols);
 
-      const maxBoundW = width * (isMonthMode ? 0.58 : (isGoalsMode ? 0.65 : 0.68));
-      const maxBoundH = height * (isMonthMode ? 0.40 : (isGoalsMode ? 0.50 : 0.64));
+    const maxBoundW = width * (isMonthMode ? 0.58 : (isGoalsMode ? 0.65 : 0.68));
+    const maxBoundH = height * (isMonthMode ? 0.40 : (isGoalsMode ? 0.50 : 0.64));
 
-      const gapRatio = 0.65;
-      const cellSpanW = cols + (cols - 1) * gapRatio;
-      const cellSpanH = rows + (rows - 1) * gapRatio;
+    const gapRatio = 0.65;
+    const cellSpanW = cols + (cols - 1) * gapRatio;
+    const cellSpanH = rows + (rows - 1) * gapRatio;
 
-      const cellSize = Math.min(maxBoundW / cellSpanW, maxBoundH / cellSpanH);
-      const gapSize = cellSize * gapRatio;
+    const cellSize = Math.min(maxBoundW / cellSpanW, maxBoundH / cellSpanH);
+    const gapSize = cellSize * gapRatio;
 
-      const gridTotalW = (cols * cellSize) + ((cols - 1) * gapSize);
-      const gridTotalH = (rows * cellSize) + ((rows - 1) * gapSize);
+    const gridTotalW = (cols * cellSize) + ((cols - 1) * gapSize);
+    const gridTotalH = (rows * cellSize) + ((rows - 1) * gapSize);
 
-      const hasTopText = Boolean(topText && topText.trim().length > 0);
-      const topTextFontSize = Math.max(13, height * 0.015);
-      const topTextSpacing = height * 0.025;
-      const topTextTotalHeight = hasTopText ? (topTextFontSize + topTextSpacing) : 0;
+    const hasTopText = Boolean(topText && topText.trim().length > 0);
+    const cleanTopText = hasTopText ? topText.trim().toUpperCase() : '';
+    const topTextFontSize = Math.max(13, height * 0.015);
+    const topTextSpacing = height * 0.025;
+    const topTextTotalHeight = hasTopText ? (topTextFontSize + topTextSpacing) : 0;
 
-      const footerFontSize = Math.max(13, height * 0.0145);
-      const footerSpacing = height * 0.03;
-      const footerTotalHeight = footerFontSize + footerSpacing;
+    const footerFontSize = Math.max(13, height * 0.0145);
+    const footerSpacing = height * 0.03;
+    const footerTotalHeight = footerFontSize + footerSpacing;
 
-      const totalCompositionH = topTextTotalHeight + gridTotalH + footerTotalHeight;
-      const verticalOffset = height * offsetFactor;
-      const topContentY = ((height - totalCompositionH) / 2) + verticalOffset;
-      const startX = (width - gridTotalW) / 2;
-      const startY = topContentY + topTextTotalHeight;
+    const totalCompositionH = topTextTotalHeight + gridTotalH + footerTotalHeight;
+    const verticalOffset = height * offsetFactor;
+    const topContentY = ((height - totalCompositionH) / 2) + verticalOffset;
+    const textY = topContentY + (topTextFontSize / 2);
+    const startX = (width - gridTotalW) / 2;
+    const startY = topContentY + topTextTotalHeight;
+    const footerY = startY + gridTotalH + footerSpacing + (footerFontSize / 2);
 
-      const pngData = createPurePNG(width, height, (setPixel, w, h) => {
-        // Fill background
-        for (let y = 0; y < h; y++) {
-          for (let x = 0; x < w; x++) {
-            setPixel(x, y, bgRgb.r, bgRgb.g, bgRgb.b, 255);
-          }
+    const pngData = createPurePNG(width, height, (setPixel, w, h) => {
+      // 1. Fill background
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          setPixel(x, y, bgRgb.r, bgRgb.g, bgRgb.b, 255);
         }
+      }
 
-        // Draw dots
-        const radius = cellSize / 2;
-        const radSquared = radius * radius;
-        const totalItems = stats.total;
+      // 2. Draw Top Text (if present)
+      if (hasTopText) {
+        const topScale = Math.max(1, Math.round(topTextFontSize / 7));
+        const topH = 7 * topScale;
+        const topW = measureBitmapText(cleanTopText, topScale);
+        const topStartX = Math.round((w - topW) / 2);
+        const topStartY = Math.round(textY - (topH / 2));
+        drawBitmapText(setPixel, cleanTopText, topStartX, topStartY, topScale, pastRgb);
+      }
 
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            const idx = r * cols + c;
-            if (idx >= totalItems) break;
+      // 3. Draw Dots Matrix (Circles)
+      const radius = cellSize / 2;
+      const radSquared = radius * radius;
+      const totalItems = stats.total;
 
-            const cx = startX + c * (cellSize + gapSize) + radius;
-            const cy = startY + r * (cellSize + gapSize) + radius;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const idx = r * cols + c;
+          if (idx >= totalItems) break;
 
-            let color = futRgb;
-            if (idx < stats.currentIndex) color = pastRgb;
-            else if (idx === stats.currentIndex) color = curRgb;
+          const cx = startX + c * (cellSize + gapSize) + radius;
+          const cy = startY + r * (cellSize + gapSize) + radius;
 
-            const minX = Math.floor(cx - radius);
-            const maxX = Math.ceil(cx + radius);
-            const minY = Math.floor(cy - radius);
-            const maxY = Math.ceil(cy + radius);
+          let color = futRgb;
+          if (idx < stats.currentIndex) color = pastRgb;
+          else if (idx === stats.currentIndex) color = curRgb;
 
-            for (let py = minY; py <= maxY; py++) {
-              for (let px = minX; px <= maxX; px++) {
-                const d2 = (px - cx) * (px - cx) + (py - cy) * (py - cy);
-                if (d2 <= radSquared) {
-                  setPixel(px, py, color.r, color.g, color.b, 255);
-                }
+          const minX = Math.floor(cx - radius);
+          const maxX = Math.ceil(cx + radius);
+          const minY = Math.floor(cy - radius);
+          const maxY = Math.ceil(cy + radius);
+
+          for (let py = minY; py <= maxY; py++) {
+            for (let px = minX; px <= maxX; px++) {
+              const d2 = (px - cx) * (px - cx) + (py - cy) * (py - cy);
+              if (d2 <= radSquared) {
+                setPixel(px, py, color.r, color.g, color.b, 255);
               }
             }
           }
         }
-      });
+      }
 
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400');
-      return res.end(pngData);
-    }
+      // 4. Draw Footer Text ("57d left · 84%")
+      const footerScale = Math.max(1, Math.round(footerFontSize / 7));
+      const fontH = 7 * footerScale;
+      const footerStartY = Math.round(footerY - (fontH / 2));
+
+      const part1 = `${stats.remaining}d left`;
+      const part2 = ` · ${Math.round(stats.percent)}%`;
+      const fullFooter = part1 + part2;
+      const totalFooterW = measureBitmapText(fullFooter, footerScale);
+      const footerStartX = Math.round((w - totalFooterW) / 2);
+
+      // Part 1: "57d left" in current color (accent)
+      drawBitmapText(setPixel, part1, footerStartX, footerStartY, footerScale, curRgb);
+
+      // Part 2: " · 84%" in subtle gray
+      const part1W = measureBitmapText(part1, footerScale);
+      const charSpacing = footerScale >= 3 ? Math.round(footerScale * 1.2) : footerScale;
+      const part2StartX = footerStartX + part1W + charSpacing;
+      const grayRgb = { r: 113, g: 113, b: 122 };
+      drawBitmapText(setPixel, part2, part2StartX, footerStartY, footerScale, grayRgb);
+    });
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400');
+    return res.end(pngData);
   } catch (error) {
     console.error('API Wallpaper Error:', error);
     if (res.json) {

@@ -12,9 +12,6 @@
     "start": "serve .",
     "dev": "serve ."
   },
-  "dependencies": {
-    "@resvg/resvg-js": "^2.6.2"
-  },
   "devDependencies": {
     "serve": "^14.2.4"
   }
