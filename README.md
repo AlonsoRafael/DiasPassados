@@ -22,7 +22,9 @@ Aplicação web moderna, minimalista e de alta precisão inspirada no conceito d
      - **Android**: Samsung Galaxy S24 Ultra, Samsung Galaxy S24/S23, Google Pixel 8/9, Google Pixel 8 Pro/9 Pro XL, Xiaomi 14 Pro, Padrão Android FHD+.
      - **Personalizado**: qualquer proporção definida livremente via URL ou campos manuais.
 
-3. **Centralização e Posicionamento Vertical Flexível**:
+3. **Centralização, Tamanho das Bolinhas e Posicionamento Flexível**:
+   - Bolinhas com tamanho ampliado e espaçamento harmônico otimizado (gap ratio de 0.48), proporcionando presença visual marcante na tela de bloqueio.
+   - Controle deslizante (**Tamanho das Bolinhas**) ajustável de 80% (compacto) até 125% (ampliado) com sincronização no link dinâmico (`?size=...`).
    - Posição vertical otimizada abaixo do relógio e widgets da tela de bloqueio com respiro de +9.5% por padrão.
    - Controle deslizante (**Posição Vertical na Tela**) de 0% (centro) até +18% (mais baixo) com atualização em tempo real e sincronização no link de automação (`?offset=...`).
 
@@ -38,9 +40,11 @@ Aplicação web moderna, minimalista e de alta precisão inspirada no conceito d
 
 5. **Parâmetros de URL (Query String)**:
    - `?platform=ios` ou `?platform=android`
-   - `?view=year` ou `?view=month`
+   - `?view=year` ou `?view=month` ou `?view=goals`
    - `?width=1170&height=2532` (ou `?w=1170&h=2532`)
    - `?bg=%230e0e0e&past=%23ffffff&current=%23f56b3f&future=%23333336` (cores hexadecimais)
+   - `?offset=9.5` (posição vertical na tela)
+   - `?size=100` (tamanho das bolinhas em porcentagem)
    - Atualização automática da URL ao alterar qualquer configuração.
 
 6. **Design & Estilo**:

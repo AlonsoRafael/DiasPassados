@@ -226,7 +226,7 @@ function createPurePNG(width, height, drawFn) {
 }
 
 // Generate SVG representation of wallpaper
-function buildSVG({ width, height, viewMode, bg, past, current, future, stats, topText, offsetFactor = 0.095 }) {
+function buildSVG({ width, height, viewMode, bg, past, current, future, stats, topText, offsetFactor = 0.095, dotScale = 1.0 }) {
   const isMonthMode = (viewMode === 'month');
   const isGoalsMode = (viewMode === 'goals');
 
@@ -240,10 +240,11 @@ function buildSVG({ width, height, viewMode, bg, past, current, future, stats, t
   }
   const rows = Math.ceil(stats.total / cols);
 
-  const maxBoundW = width * (isMonthMode ? 0.58 : (isGoalsMode ? 0.65 : 0.68));
-  const maxBoundH = height * (isMonthMode ? 0.40 : (isGoalsMode ? 0.50 : 0.64));
+  const scale = (typeof dotScale === 'number' && dotScale > 0) ? dotScale : 1.0;
+  const maxBoundW = width * (isMonthMode ? 0.65 : (isGoalsMode ? 0.70 : 0.74)) * scale;
+  const maxBoundH = height * (isMonthMode ? 0.42 : (isGoalsMode ? 0.52 : 0.65)) * scale;
 
-  const gapRatio = 0.65;
+  const gapRatio = 0.48;
   const cellSpanW = cols + (cols - 1) * gapRatio;
   const cellSpanH = rows + (rows - 1) * gapRatio;
 
@@ -350,6 +351,10 @@ module.exports = async function handler(req, res) {
     const future = q.future || '#333336';
     const offsetQuery = parseFloat(q.offset || q.y);
     const offsetFactor = !isNaN(offsetQuery) ? Math.min(0.25, Math.max(0, offsetQuery / 100)) : 0.095;
+    const sizeParam = parseFloat(q.size || q.scale || q.dotScale);
+    const dotScale = (!isNaN(sizeParam) && sizeParam >= 50 && sizeParam <= 200) ? (sizeParam / 100) : (
+      (!isNaN(sizeParam) && sizeParam >= 0.5 && sizeParam <= 2.0) ? sizeParam : 1.0
+    );
 
     // Time calculations using local time (UTC-3 for Brazil)
     const tzOffsetMs = 3 * 60 * 60 * 1000;
@@ -414,7 +419,7 @@ module.exports = async function handler(req, res) {
 
     // Client explicitly asked for SVG
     if (q.format === 'svg') {
-      const svg = buildSVG({ width, height, viewMode, bg, past, current, future, stats, topText, offsetFactor });
+      const svg = buildSVG({ width, height, viewMode, bg, past, current, future, stats, topText, offsetFactor, dotScale });
       res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400');
       return res.end(svg);
@@ -439,10 +444,10 @@ module.exports = async function handler(req, res) {
     }
     const rows = Math.ceil(stats.total / cols);
 
-    const maxBoundW = width * (isMonthMode ? 0.58 : (isGoalsMode ? 0.65 : 0.68));
-    const maxBoundH = height * (isMonthMode ? 0.40 : (isGoalsMode ? 0.50 : 0.64));
+    const maxBoundW = width * (isMonthMode ? 0.65 : (isGoalsMode ? 0.70 : 0.74)) * dotScale;
+    const maxBoundH = height * (isMonthMode ? 0.42 : (isGoalsMode ? 0.52 : 0.65)) * dotScale;
 
-    const gapRatio = 0.65;
+    const gapRatio = 0.48;
     const cellSpanW = cols + (cols - 1) * gapRatio;
     const cellSpanH = rows + (rows - 1) * gapRatio;
 

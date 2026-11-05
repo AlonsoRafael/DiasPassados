@@ -31,12 +31,13 @@ function drawWallpaper(canvas, targetWidth, targetHeight, state, stats) {
   }
   const rows = Math.ceil(stats.total / cols);
 
-  // Harmonious bounds across phone screens
-  const maxBoundW = targetWidth * (isMonth ? 0.58 : (isGoals ? 0.65 : 0.68));
-  const maxBoundH = targetHeight * (isMonth ? 0.40 : (isGoals ? 0.50 : 0.64));
+  // Harmonious bounds across phone screens (aumentado para melhor visualização das bolinhas)
+  const dotScale = (typeof state.dotScale === 'number' && state.dotScale > 0) ? state.dotScale : 1.0;
+  const maxBoundW = targetWidth * (isMonth ? 0.65 : (isGoals ? 0.70 : 0.74)) * dotScale;
+  const maxBoundH = targetHeight * (isMonth ? 0.42 : (isGoals ? 0.52 : 0.65)) * dotScale;
 
-  // Standardized gap ratio and sizing
-  const gapRatio = 0.65;
+  // Standardized gap ratio and sizing (reduzido para 0.48 para bolinhas maiores e mais presentes)
+  const gapRatio = 0.48;
   const cellSpanW = cols + (cols - 1) * gapRatio;
   const cellSpanH = rows + (rows - 1) * gapRatio;
 

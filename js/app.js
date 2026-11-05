@@ -16,6 +16,7 @@
     goalDays: 30,
     goalStartDate: new Date().toISOString().split('T')[0],
     verticalOffset: 9.5,
+    dotScale: 1.0,
     bgColor: '#0e0e0e',
     pastColor: '#ffffff',
     currentColor: '#f56b3f',
@@ -62,6 +63,8 @@
     goalPresetBtns: document.querySelectorAll('.goal-preset-btn'),
     offsetRange: document.getElementById('offsetRange'),
     offsetValBadge: document.getElementById('offsetValBadge'),
+    dotSizeRange: document.getElementById('dotSizeRange'),
+    dotSizeValBadge: document.getElementById('dotSizeValBadge'),
     platformIosBtn: document.getElementById('platformIosBtn'),
     platformAndroidBtn: document.getElementById('platformAndroidBtn'),
     deviceModelLabel: document.getElementById('deviceModelLabel'),
@@ -317,6 +320,15 @@
       state.verticalOffset = offset;
     }
 
+    const sizeParam = parseFloat(params.get('size') || params.get('scale'));
+    if (!isNaN(sizeParam)) {
+      if (sizeParam >= 50 && sizeParam <= 200) {
+        state.dotScale = sizeParam / 100;
+      } else if (sizeParam >= 0.5 && sizeParam <= 2.0) {
+        state.dotScale = sizeParam;
+      }
+    }
+
     const hexRegex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
     const bg = params.get('bg');
     if (bg && hexRegex.test(bg)) state.bgColor = bg;
@@ -352,6 +364,13 @@
       url.searchParams.set('offset', state.verticalOffset);
     } else {
       url.searchParams.delete('offset');
+    }
+
+    const sizePct = Math.round((state.dotScale || 1.0) * 100);
+    if (sizePct !== 100) {
+      url.searchParams.set('size', sizePct);
+    } else {
+      url.searchParams.delete('size');
     }
 
     if (state.viewMode === 'goals') {
@@ -398,6 +417,14 @@
     }
     if (elements.offsetValBadge) {
       elements.offsetValBadge.textContent = `+${state.verticalOffset}%`;
+    }
+
+    if (elements.dotSizeRange) {
+      const sizePct = Math.round((state.dotScale || 1.0) * 100);
+      elements.dotSizeRange.value = sizePct;
+      if (elements.dotSizeValBadge) {
+        elements.dotSizeValBadge.textContent = sizePct === 100 ? 'Padrão' : `${sizePct}%`;
+      }
     }
 
     if (elements.goalPresetBtns) {
@@ -543,6 +570,10 @@
     if (state.verticalOffset !== 9.5) {
       params.set('offset', state.verticalOffset);
     }
+    const sizePct = Math.round((state.dotScale || 1.0) * 100);
+    if (sizePct !== 100) {
+      params.set('size', sizePct);
+    }
 
     return `${base}/api/wallpaper?${params.toString()}`;
   }
@@ -668,6 +699,20 @@
       state.verticalOffset = parseFloat(e.target.value);
       if (elements.offsetValBadge) {
         elements.offsetValBadge.textContent = `+${state.verticalOffset}%`;
+      }
+      syncStateToUrl();
+      renderPreview();
+      updateModalControls();
+    });
+  }
+
+  // Dot Size Slider
+  if (elements.dotSizeRange) {
+    elements.dotSizeRange.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      state.dotScale = val / 100;
+      if (elements.dotSizeValBadge) {
+        elements.dotSizeValBadge.textContent = val === 100 ? 'Padrão' : `${val}%`;
       }
       syncStateToUrl();
       renderPreview();
@@ -821,6 +866,7 @@
     state.goalDays = 30;
     state.goalStartDate = new Date().toISOString().split('T')[0];
     state.verticalOffset = 9.5;
+    state.dotScale = 1.0;
     state.bgColor = '#0e0e0e';
     state.pastColor = '#ffffff';
     state.currentColor = '#f56b3f';
