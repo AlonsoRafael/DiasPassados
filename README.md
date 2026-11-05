@@ -42,7 +42,7 @@ Aplicação web moderna, minimalista e de alta precisão inspirada no conceito d
    - `?platform=ios` ou `?platform=android`
    - `?view=year` ou `?view=month` ou `?view=goals`
    - `?width=1170&height=2532` (ou `?w=1170&h=2532`)
-   - `?bg=%230e0e0e&past=%23ffffff&current=%23f56b3f&future=%23333336` (cores hexadecimais)
+   - `?bg=%230e0e0e&past=%23a1a1aa&current=%23c85a38&future=%232c2c30` (cores hexadecimais foscas)
    - `?offset=9.5` (posição vertical na tela)
    - `?size=100` (tamanho das bolinhas em porcentagem)
    - Atualização automática da URL ao alterar qualquer configuração.

@@ -6,39 +6,39 @@
 const PALETTES = {
   coral: {
     bg: '#0e0e0e',
-    past: '#ffffff',
-    current: '#f56b3f',
-    future: '#333336'
+    past: '#a1a1aa',
+    current: '#c85a38',
+    future: '#2c2c30'
   },
   obsidian: {
     bg: '#09090b',
-    past: '#f8fafc',
-    current: '#38bdf8',
-    future: '#27272a'
+    past: '#94a3b8',
+    current: '#3b82a6',
+    future: '#22242a'
   },
   emerald: {
     bg: '#05130e',
-    past: '#10b981',
-    current: '#34d399',
-    future: '#064e3b'
+    past: '#4b8570',
+    current: '#52a384',
+    future: '#0f241c'
   },
   amber: {
-    bg: '#18110d',
-    past: '#f59e0b',
-    current: '#fbbf24',
-    future: '#38251b'
+    bg: '#14100c',
+    past: '#a87836',
+    current: '#c48937',
+    future: '#261e17'
   },
   midnight: {
-    bg: '#030712',
-    past: '#818cf8',
-    current: '#6366f1',
-    future: '#1e1b4b'
+    bg: '#090a14',
+    past: '#6b7094',
+    current: '#656ab3',
+    future: '#1b1c2b'
   },
   monochrome: {
-    bg: '#000000',
-    past: '#e5e5e5',
-    current: '#ffffff',
-    future: '#262626'
+    bg: '#0a0a0a',
+    past: '#8e8e93',
+    current: '#d4d4d8',
+    future: '#262629'
   }
 };
 

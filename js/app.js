@@ -18,9 +18,9 @@
     verticalOffset: 9.5,
     dotScale: 1.0,
     bgColor: '#0e0e0e',
-    pastColor: '#ffffff',
-    currentColor: '#f56b3f',
-    futureColor: '#333336',
+    pastColor: '#a1a1aa',
+    currentColor: '#c85a38',
+    futureColor: '#2c2c30',
     showLockOverlay: true
   };
 
@@ -868,9 +868,9 @@
     state.verticalOffset = 9.5;
     state.dotScale = 1.0;
     state.bgColor = '#0e0e0e';
-    state.pastColor = '#ffffff';
-    state.currentColor = '#f56b3f';
-    state.futureColor = '#333336';
+    state.pastColor = '#a1a1aa';
+    state.currentColor = '#c85a38';
+    state.futureColor = '#2c2c30';
 
     setPlatform('ios', false);
     syncStateToInputs();

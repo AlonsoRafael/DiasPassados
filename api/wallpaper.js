@@ -148,7 +148,7 @@ function drawBitmapText(setPixel, text, startX, startY, scale, color) {
 }
 
 // Helper to convert hex to RGB
-function hexToRgb(hex, fallback = { r: 255, g: 255, b: 255 }) {
+function hexToRgb(hex, fallback = { r: 161, g: 161, b: 170 }) {
   if (!hex) return fallback;
   const clean = hex.replace('#', '').trim();
   if (clean.length === 3) {
@@ -166,6 +166,73 @@ function hexToRgb(hex, fallback = { r: 255, g: 255, b: 255 }) {
     };
   }
   return fallback;
+}
+
+// Convert RGB (0..255) to HSL (0..1)
+function rgbToHsl(r, g, b) {
+  const rf = r / 255, gf = g / 255, bf = b / 255;
+  const max = Math.max(rf, gf, bf), min = Math.min(rf, gf, bf);
+  let h = 0, s = 0, l = (max + min) / 2;
+  const d = max - min;
+  if (d !== 0) {
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case rf: h = (gf - bf) / d + (gf < bf ? 6 : 0); break;
+      case gf: h = (bf - rf) / d + 2; break;
+      case bf: h = (rf - gf) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return { h, s, l };
+}
+
+// Convert HSL (0..1) to RGB (0..255)
+function hslToRgb(h, s, l) {
+  let r, g, b;
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  return {
+    r: Math.round(r * 255),
+    g: Math.round(g * 255),
+    b: Math.round(b * 255)
+  };
+}
+
+// Automatic Matte Treatment: ensures any color chosen by user is rendered with matte finish
+function toMatteHex(hex) {
+  if (!hex || typeof hex !== 'string') return hex;
+  const rgb = hexToRgb(hex);
+  const diff = Math.max(rgb.r, rgb.g, rgb.b) - Math.min(rgb.r, rgb.g, rgb.b);
+  let { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+  if (diff < 24) {
+    // True neutral / off-white / gray: cap lightness to 65% so pure white never glares
+    s = Math.min(s, 0.04);
+    if (l > 0.65) l = 0.65;
+  } else {
+    // Chromatic: cap saturation to 52% (removes neon glow) and balance lightness
+    if (s > 0.52) s = 0.52;
+    if (l > 0.52) l = 0.52;
+    if (l < 0.42) l = 0.42;
+  }
+
+  const res = hslToRgb(h, s, l);
+  return '#' + ((1 << 24) + (res.r << 16) + (res.g << 8) + res.b).toString(16).slice(1);
 }
 
 // Pure Node.js zero-dependency PNG encoder
@@ -227,6 +294,10 @@ function createPurePNG(width, height, drawFn) {
 
 // Generate SVG representation of wallpaper
 function buildSVG({ width, height, viewMode, bg, past, current, future, stats, topText, offsetFactor = 0.095, dotScale = 1.0 }) {
+  const mattePast = toMatteHex(past);
+  const matteCurrent = toMatteHex(current);
+  const matteFuture = toMatteHex(future);
+
   const isMonthMode = (viewMode === 'month');
   const isGoalsMode = (viewMode === 'goals');
 
@@ -284,11 +355,11 @@ function buildSVG({ width, height, viewMode, bg, past, current, future, stats, t
       const x = startX + c * (cellSize + gapSize);
       const y = startY + r * (cellSize + gapSize);
 
-      let color = future;
+      let color = matteFuture;
       if (idx < stats.currentIndex) {
-        color = past;
+        color = mattePast;
       } else if (idx === stats.currentIndex) {
-        color = current;
+        color = matteCurrent;
       }
 
       const cx = (x + cellSize / 2).toFixed(1);
@@ -302,7 +373,7 @@ function buildSVG({ width, height, viewMode, bg, past, current, future, stats, t
   if (hasTopText) {
     const safeText = cleanTopText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     topTextSvg = `
-    <text x="${width / 2}" y="${textY}" font-family="Inter, -apple-system, sans-serif" font-size="${topTextFontSize}" font-weight="600" letter-spacing="3" fill="${past}" text-anchor="middle" dominant-baseline="middle">${safeText}</text>
+    <text x="${width / 2}" y="${textY}" font-family="Inter, -apple-system, sans-serif" font-size="${topTextFontSize}" font-weight="600" letter-spacing="3" fill="${mattePast}" text-anchor="middle" dominant-baseline="middle">${safeText}</text>
     `;
   }
 
@@ -311,7 +382,7 @@ function buildSVG({ width, height, viewMode, bg, past, current, future, stats, t
   const footerSvg = `
     <g transform="translate(${width / 2}, ${footerY})" font-family="Inter, -apple-system, sans-serif" font-size="${footerFontSize}" font-weight="500" text-anchor="middle" dominant-baseline="middle">
       <text>
-        <tspan fill="${current}">${daysText}</tspan>
+        <tspan fill="${matteCurrent}">${daysText}</tspan>
         <tspan fill="#71717a">${percentText}</tspan>
       </text>
     </g>
@@ -346,9 +417,9 @@ module.exports = async function handler(req, res) {
     const rawText = (q.text || q.topText || '').trim();
     const topText = rawText ? rawText.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase() : '';
     const bg = q.bg || '#0e0e0e';
-    const past = q.past || '#ffffff';
-    const current = q.current || '#f56b3f';
-    const future = q.future || '#333336';
+    const past = q.past || '#a1a1aa';
+    const current = q.current || '#c85a38';
+    const future = q.future || '#2c2c30';
     const offsetQuery = parseFloat(q.offset || q.y);
     const offsetFactor = !isNaN(offsetQuery) ? Math.min(0.25, Math.max(0, offsetQuery / 100)) : 0.095;
     const sizeParam = parseFloat(q.size || q.scale || q.dotScale);
@@ -427,9 +498,9 @@ module.exports = async function handler(req, res) {
 
     // Fast, 100% Reliable Native PNG Renderer (with complete font & text rasterization)
     const bgRgb = hexToRgb(bg, { r: 14, g: 14, b: 14 });
-    const pastRgb = hexToRgb(past, { r: 255, g: 255, b: 255 });
-    const curRgb = hexToRgb(current, { r: 245, g: 107, b: 63 });
-    const futRgb = hexToRgb(future, { r: 51, g: 51, b: 54 });
+    const pastRgb = hexToRgb(toMatteHex(past), { r: 161, g: 161, b: 170 });
+    const curRgb = hexToRgb(toMatteHex(current), { r: 200, g: 90, b: 56 });
+    const futRgb = hexToRgb(toMatteHex(future), { r: 44, g: 44, b: 48 });
 
     const isMonthMode = (viewMode === 'month');
     const isGoalsMode = (viewMode === 'goals');
